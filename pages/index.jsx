@@ -148,7 +148,7 @@ export default function Home () {
   return (
     <div>
       <Head>
-        <title>Task Time </title>
+        <title>{ activeTask ? `${minutes}:${seconds} | ${activeTask.name}` : 'Taskspill'}</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
