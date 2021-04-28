@@ -135,9 +135,28 @@ export default function Home () {
     dispatch({ type: 'remove_task', id: task.id })
   }
 
-  function getElapsed (seconds) {
-    if (!seconds) return ''
-    const end = addSeconds(new Date(0), seconds)
+  function getElapsed (task) {
+    let seconds = 0
+
+    if (task?.elapsed) {
+      seconds = task.elapsed
+    }
+
+    let extra = 0
+    if (activeTask?.id === task.id) {
+      const activeTimer = activeTask.timers.find(f => f.active)
+      if (activeTimer) {
+        const endTimer = addSeconds(new Date(activeTimer.start), 0)
+        const diff = differenceInSeconds(new Date(), endTimer)
+        extra = diff
+      }
+    }
+    const end = addSeconds(new Date(0), seconds + extra)
+    const diff = differenceInSeconds(new Date(0), end)
+
+    if (diff === 0) {
+      return 'Not started'
+    }
 
     return formatDistanceStrict(new Date(0), end)
   }
@@ -171,7 +190,7 @@ export default function Home () {
             { state.tasks.map((i) =>
               <div key={i.id} className="tasks flex px-3 py-2 bg-white rounded shadow-sm mb-1 group">
                 <div className="px-2 flex-grow">{ i.name }</div>
-                <div className="elapsed">{ getElapsed(i.elapsed) }</div>
+                <div className="elapsed group-hover:hidden text-sm text-gray-600">{ getElapsed(i) }</div>
                 <div className="task-action items-center justify-center hidden group-hover:flex">
                   <button onClick={() => deleteTask(i)} className="focus:outline-none px-2">
                     <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="trash" className="fill-current text-gray-600 hover:text-red-500 w-4 h-4" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M432 32H312l-9.4-18.7A24 24 0 0 0 281.1 0H166.8a23.72 23.72 0 0 0-21.4 13.3L136 32H16A16 16 0 0 0 0 48v32a16 16 0 0 0 16 16h416a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16zM53.2 467a48 48 0 0 0 47.9 45h245.8a48 48 0 0 0 47.9-45L416 128H32z"></path></svg>
