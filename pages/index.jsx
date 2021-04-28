@@ -33,28 +33,25 @@ function reducer (state, action) {
         target.timers = []
       }
 
-      if (state.active === action.id) {
-        // Pause & remove from active
-        target.timers = target.timers.map(m => {
-          if (m.active) {
-            return {
-              ...m,
-              finish: (new Date()).getTime(),
-              active: false
-            }
+      // Pause & remove from active
+      target.timers = target.timers.map(m => {
+        if (m.active) {
+          return {
+            ...m,
+            finish: (new Date()).getTime(),
+            active: false
           }
+        }
 
-          return m
-        })
-      } else {
-        // Start timer & set active
-        target.timers.push({
-          start: (new Date()).getTime(),
-          finish: null,
-          active: true,
-          isBreak: false
-        })
-      }
+        return m
+      })
+      // Start timer & set active
+      target.timers.push({
+        start: (new Date()).getTime(),
+        finish: null,
+        active: true,
+        isBreak: false
+      })
 
       // Calculate total spend
       target.elapsed = target.timers.reduce((total, timer) => {
@@ -148,7 +145,9 @@ export default function Home () {
   return (
     <div>
       <Head>
-        <title>{ activeTask ? `${minutes}:${seconds} | ${activeTask.name}` : 'Taskspill'}</title>
+        <title>
+          { activeTask ? `${String(minutes).padStart(2, 0)}:${String(seconds).padStart(2, 0)} | ${activeTask.name}` : 'Taskspill'}
+        </title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -158,7 +157,7 @@ export default function Home () {
             <div
               id="timer"
               className="flex w-60 h-60 items-center justify-center px-4 py-8 text-6xl font-bold text-gray-800 bg-white rounded-full shadow-sm">
-              {minutes}:{seconds}
+              {`${String(minutes).padStart(2, 0)}`}:{`${String(seconds).padStart(2, 0)}`}
             </div>
             <div className="task-title text-lg font-medium text-gray-700 py-2">{activeTask?.name}</div>
           </div>
