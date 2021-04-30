@@ -94,7 +94,7 @@ export default function Home () {
     let timerInterval = null
     if (state.active && activeTask) {
       const activeTimer = activeTask.timers.find(f => f.active)
-      const endTimer = addSeconds(new Date(activeTimer.start), 5)// 25 * 60)
+      const endTimer = addSeconds(new Date(activeTimer.start), 25 * 60)
       const diff = differenceInSeconds(endTimer, new Date())
       // console.log('time diff', activeTimer.start, diff)
 
