@@ -1,6 +1,8 @@
 import { addSeconds, differenceInSeconds, formatDistanceStrict } from 'date-fns'
 import Head from 'next/head'
 import { useEffect, useReducer, useState } from 'react'
+import bellSound from '../assets/audio/bell.mp3'
+// import useSound from 'use-sound'
 
 const initialState = {
   tasks: [],
@@ -77,15 +79,22 @@ export default function Home () {
   const [state, dispatch] = useReducer(reducer, initialState, initializer)
   const [minutes, setMinutes] = useState(0)
   const [seconds, setSeconds] = useState(0)
+  const [bell, setBell] = useState(false)
+
   const activeTask = state.tasks.find(f => f.id === state.active)
 
   useEffect(() => {
     localStorage.setItem('store', JSON.stringify(state))
 
+    const bellAudio = new Audio(bellSound)
+    bellAudio.addEventListener('ended', () => setBell(false))
+
+    bell ? bellAudio.play() : bellAudio.pause()
+
     let timerInterval = null
     if (state.active && activeTask) {
       const activeTimer = activeTask.timers.find(f => f.active)
-      const endTimer = addSeconds(new Date(activeTimer.start), 25 * 60)
+      const endTimer = addSeconds(new Date(activeTimer.start), 5)// 25 * 60)
       const diff = differenceInSeconds(endTimer, new Date())
       // console.log('time diff', activeTimer.start, diff)
 
@@ -101,6 +110,7 @@ export default function Home () {
         if (seconds === 0) {
           if (minutes === 0) {
             startTimer(activeTask)
+            setBell(true)
             clearInterval(timerInterval)
           } else {
             setMinutes(minutes - 1)
