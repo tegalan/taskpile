@@ -237,7 +237,7 @@ export default function Home () {
             {/* History */}
             <div id="task-history" className="flex items-center justify-start py-2">
               { activeTask?.timers?.map((m, i) =>
-                <div key={i} className={`w-3 h-8 rounded mr-1 ${m.isBreak ? 'bg-gray-400' : 'bg-green-400'}`}></div>
+                <div key={i} className={`w-3 h-8 rounded mr-1 ${m.isBreak ? 'bg-gray-400' : 'bg-green-400'} ${m.active ? 'animate-pulse' : ''}`}></div>
               )}
             </div>
             {/* Active Task Name */}
