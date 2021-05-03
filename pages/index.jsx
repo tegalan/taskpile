@@ -134,7 +134,7 @@ export default function Home () {
       const activeTimer = activeTask.timers.find(f => f.active)
 
       // Timer length
-      let timer = 0.25
+      let timer = 25
       if (activeTimer.isBreak) {
         timer = 5
       }
