@@ -30,38 +30,69 @@ function reducer (state, action) {
       }
     case 'start_timer': {
       let tasks = state.tasks.filter(f => f.id !== action.id)
+
       const target = state.tasks.find(f => f.id === action.id)
       if (!target.timers) {
         target.timers = []
       }
 
       // Pause & remove from active
-      target.timers = target.timers.map(m => {
-        if (m.active) {
-          return {
-            ...m,
-            finish: (new Date()).getTime(),
-            active: false
+      if (target.id === state.active) {
+        target.timers = target.timers.map(m => {
+          if (m.active) {
+            return {
+              ...m,
+              finish: (new Date()).getTime(),
+              active: false
+            }
           }
-        }
 
-        return m
-      })
-      // Start timer & set active
-      target.timers.push({
-        start: (new Date()).getTime(),
-        finish: null,
-        active: true,
-        isBreak: false
-      })
+          return m
+        })
+        console.log('target is same with active task', target.timers)
+      } else {
+        tasks = tasks.map(m => {
+          if (state.active === m.id) {
+            console.log('started task is not same', m)
+            m.timers = m.timers.map(t => {
+              if (t.active) {
+                return {
+                  ...t,
+                  finish: (new Date()).getTime(),
+                  active: false
+                }
+              }
+              return t
+            })
+            m.elapsed = m.timers.reduce((total, timer) => {
+              if (timer.start && timer.finish) {
+                total += differenceInSeconds(new Date(timer.finish), new Date(timer.start))
+              }
+              return total
+            }, 0)
+          }
+          return m
+        })
+      }
 
-      // Calculate total spend
-      target.elapsed = target.timers.reduce((total, timer) => {
-        if (timer.start && timer.finish) {
-          total += differenceInSeconds(new Date(timer.finish), new Date(timer.start))
-        }
-        return total
-      }, 0)
+      if (target.id !== state.active) {
+        // Start timer & set active
+        const lastTimers = target.timers?.slice(-4)
+        target.timers.push({
+          start: (new Date()).getTime(),
+          finish: null,
+          active: true,
+          isBreak: lastTimers.length === 4 && lastTimers.every(e => !e.isBreak)
+        })
+      } else {
+        // Calculate total spend
+        target.elapsed = target.timers.reduce((total, timer) => {
+          if (timer.start && timer.finish) {
+            total += differenceInSeconds(new Date(timer.finish), new Date(timer.start))
+          }
+          return total
+        }, 0)
+      }
 
       tasks = [target, ...tasks]
       return {
@@ -84,17 +115,31 @@ export default function Home () {
   const activeTask = state.tasks.find(f => f.id === state.active)
 
   useEffect(() => {
-    localStorage.setItem('store', JSON.stringify(state))
-
     const bellAudio = new Audio(bellSound)
-    bellAudio.addEventListener('ended', () => setBell(false))
+    bellAudio.addEventListener('ended', () => {
+      setBell(false)
+    })
 
+    console.log('bel audio is playing?', bell)
     bell ? bellAudio.play() : bellAudio.pause()
+  }, [bell])
 
+  useEffect(() => {
+    localStorage.setItem('store', JSON.stringify(state))
+  })
+
+  useEffect(() => {
     let timerInterval = null
     if (state.active && activeTask) {
       const activeTimer = activeTask.timers.find(f => f.active)
-      const endTimer = addSeconds(new Date(activeTimer.start), 25 * 60)
+
+      // Timer length
+      let timer = 0.25
+      if (activeTimer.isBreak) {
+        timer = 5
+      }
+
+      const endTimer = addSeconds(new Date(activeTimer.start), timer * 60)
       const diff = differenceInSeconds(endTimer, new Date())
       // console.log('time diff', activeTimer.start, diff)
 
@@ -182,20 +227,32 @@ export default function Home () {
 
       <div className="bg-gray-50 flex items-center justify-center min-h-screen">
         <div id="main" className="p-2 w-full max-w-lg">
+          {/* Timer */}
           <div className="flex flex-col items-center justify-center">
             <div
               id="timer"
               className="flex w-60 h-60 items-center justify-center px-4 py-8 text-6xl font-bold text-gray-800 bg-white rounded-full shadow-sm">
               {`${String(minutes).padStart(2, 0)}`}:{`${String(seconds).padStart(2, 0)}`}
             </div>
+            {/* History */}
+            <div id="task-history" className="flex items-center justify-start py-2">
+              { activeTask?.timers?.map((m, i) =>
+                <div key={i} className={`w-3 h-8 rounded mr-1 ${m.isBreak ? 'bg-gray-400' : 'bg-green-400'}`}></div>
+              )}
+            </div>
+            {/* Active Task Name */}
+            { activeTask &&
             <div className="task-title text-lg font-medium text-gray-700 py-2">{activeTask?.name}</div>
+            }
           </div>
+          {/* New task input */}
           <div className="w-full">
             <input
               onKeyDown={onInputKeydown}
               type="text" placeholder="Add New Task?"
               className="px-3 py-2 border rounded w-full mt-4 focus:outline-none"/>
           </div>
+          {/* Task list */}
           <div id="task-lists" className="mt-2">
             { state.tasks.map((i) =>
               <div key={i.id} className="tasks flex px-3 py-2 bg-white rounded shadow-sm mb-1 group">
