@@ -1,3 +1,4 @@
+/* eslint-disable brace-style */
 import { addSeconds, differenceInSeconds, formatDistanceStrict } from 'date-fns'
 import Head from 'next/head'
 import { useEffect, useReducer, useState } from 'react'
@@ -77,12 +78,29 @@ function reducer (state, action) {
 
       if (target.id !== state.active) {
         // Start timer & set active
-        const lastTimers = target.timers?.slice(-4)
+
+        const nextIsShortBreak = () => {
+          const lastTimer = target.timers?.slice(-1)
+          let isBreak = false
+          if (lastTimer?.length && !(lastTimer[0].isBreak || lastTimer[0].isLongBreak)) {
+            isBreak = true
+          }
+          console.log('nextisshortbreak?', isBreak)
+          return isBreak
+        }
+        const nextIsLongBreak = () => {
+          const lastTimers = target.timers?.slice(-7)
+          const isBreak = lastTimers.filter(f => f.isBreak).length === 3
+          console.log('nextislongbreak?', isBreak)
+          return isBreak
+        }
+
         target.timers.push({
           start: (new Date()).getTime(),
           finish: null,
           active: true,
-          isBreak: lastTimers.length === 4 && lastTimers.every(e => !e.isBreak)
+          isLongBreak: nextIsLongBreak() && nextIsShortBreak(),
+          isBreak: nextIsShortBreak() && !nextIsLongBreak()
         })
       } else {
         // Calculate total spend
@@ -137,6 +155,8 @@ export default function Home () {
       let timer = 25
       if (activeTimer.isBreak) {
         timer = 5
+      } else if (activeTimer.isLongBreak) {
+        timer = 30
       }
 
       const endTimer = addSeconds(new Date(activeTimer.start), timer * 60)
@@ -156,6 +176,7 @@ export default function Home () {
           if (minutes === 0) {
             startTimer(activeTask)
             setBell(true)
+            notify('Task Ended!', 'Your timer is end')
             clearInterval(timerInterval)
           } else {
             setMinutes(minutes - 1)
@@ -216,6 +237,36 @@ export default function Home () {
     return formatDistanceStrict(new Date(0), end)
   }
 
+  function notify (title, body) {
+    // Let's check if the browser supports notifications
+    if (!('Notification' in window)) {
+      alert('This browser does not support desktop notification')
+    }
+
+    // Let's check whether notification permissions have already been granted
+    else if (Notification.permission === 'granted') {
+    // If it's okay let's create a notification
+      const notification = new Notification(title, { body })
+      notification.onclick = function () {
+        console.log('hello world')
+        // window.open(window.location.href, '_self')
+      }
+    }
+
+    // Otherwise, we need to ask the user for permission
+    else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(function (permission) {
+      // If the user accepts, let's create a notification
+        if (permission === 'granted') {
+          const notification = new Notification('Got It!', { body: 'Notification now is enabled' })
+          notification.onclick = function () {
+            console.log('hello world')
+          }
+        }
+      })
+    }
+  }
+
   return (
     <div>
       <Head>
@@ -227,6 +278,7 @@ export default function Home () {
 
       <div className="bg-gray-50 flex items-center justify-center min-h-screen">
         <div id="main" className="p-2 w-full max-w-lg">
+          {/* <button onClick={() => notify('test', 'Test notification')}>test notif</button> */}
           {/* Timer */}
           <div className="flex flex-col items-center justify-center">
             <div
@@ -235,9 +287,9 @@ export default function Home () {
               {`${String(minutes).padStart(2, 0)}`}:{`${String(seconds).padStart(2, 0)}`}
             </div>
             {/* History */}
-            <div id="task-history" className="flex items-center justify-start py-2">
+            <div id="task-history" className="flex items-center justify-start py-2 w-full max-w-lg flex-wrap">
               { activeTask?.timers?.map((m, i) =>
-                <div key={i} className={`w-3 h-8 rounded mr-1 ${m.isBreak ? 'bg-gray-400' : 'bg-green-400'} ${m.active ? 'animate-pulse' : ''}`}></div>
+                <div key={i} className={`h-8 rounded mr-1 mb-2 ${m.isBreak || m.isLongBreak ? 'bg-gray-400' : 'bg-green-400'} ${m.active ? 'animate-pulse' : ''} ${m.isBreak ? 'w-2' : m.isLongBreak ? 'w-8' : 'w-6'}`}></div>
               )}
             </div>
             {/* Active Task Name */}
